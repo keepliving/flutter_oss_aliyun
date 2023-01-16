@@ -42,7 +42,7 @@ class Client {
     Future<String> Function()? tokenGetter,
     Dio? dio,
   }) {
-    assert(stsUrl != null || tokenGetter != null);
+    assert(stsUrl != null || tokenGetter != null || (accessKey != null && accessKeySecret != null));
     _dio = dio ?? RestClient.getInstance();
     _usingSts = usingSts ?? false;
     _accessKey = accessKey ?? "";
