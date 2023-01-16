@@ -21,7 +21,10 @@ class Client {
   final String endpoint;
   final String bucketName;
   final Future<String> Function() tokenGetter;
+  static late final bool _usingSts;
   static late Dio _dio;
+  static late String _accessKey;
+  static late String _accessKeySecret;
 
   Client._(
     this.endpoint,
@@ -33,11 +36,17 @@ class Client {
     String? stsUrl,
     required String ossEndpoint,
     required String bucketName,
+    bool? usingSts,
+    String? accessKey,
+    String? accessKeySecret,
     Future<String> Function()? tokenGetter,
     Dio? dio,
   }) {
     assert(stsUrl != null || tokenGetter != null);
     _dio = dio ?? RestClient.getInstance();
+    _usingSts = usingSts ?? false;
+    _accessKey = accessKey ?? "";
+    _accessKeySecret = accessKeySecret ?? "";
 
     final tokenGet = tokenGetter ??
         () async {
@@ -93,8 +102,10 @@ class Client {
       "OSSAccessKeyId": auth.accessKey,
       "Expires": expires,
       "Signature": auth.getSignature(expires, bucket, fileKey),
-      "security-token": auth.encodedToken
     };
+    if (_usingSts) {
+      params.putIfAbsent("security-token", () => auth.encodedToken);
+    }
     final HttpRequest request = HttpRequest(url, 'GET', params, {});
 
     return request.url;
@@ -582,17 +593,27 @@ class Client {
     return await Future.wait(deletes);
   }
 
-  /// get auth information from sts server
+  /// get auth information from sts server or using ak/aks
   Future<Auth> _getAuth() async {
     if (_isNotAuthenticated()) {
-      final String resp = await tokenGetter();
-      final respMap = jsonDecode(resp);
-      _auth = Auth(
-        respMap['AccessKeyId'],
-        respMap['AccessKeySecret'],
-        respMap['SecurityToken'],
-      );
-      _expire = respMap['Expiration'];
+      if (_usingSts) {
+        final String resp = await tokenGetter();
+        final respMap = jsonDecode(resp);
+        _auth = Auth(
+          true,
+          respMap['AccessKeyId'],
+          respMap['AccessKeySecret'],
+          respMap['SecurityToken'],
+        );
+        _expire = respMap['Expiration'];
+      } else {
+        _auth = Auth(
+          false,
+          _accessKey,
+          _accessKeySecret,
+          ""
+        );
+      }
     }
 
     return _auth!;
@@ -600,7 +621,7 @@ class Client {
 
   /// whether auth is valid or not
   bool _isNotAuthenticated() {
-    return _auth == null || _isExpired();
+    return _auth == null || (_usingSts && _isExpired());
   }
 
   /// whether the auth is expired or not

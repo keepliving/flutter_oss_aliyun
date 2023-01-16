@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_oss_aliyun/src/request.dart';
@@ -5,11 +6,13 @@ import 'package:flutter_oss_aliyun/src/request.dart';
 import 'encrypt.dart';
 
 class Auth {
+  final bool usingSts;
   final String accessKey;
   final String accessSecret;
   final String secureToken;
 
   Auth(
+    this.usingSts ,
     this.accessKey,
     this.accessSecret,
     this.secureToken,
@@ -23,7 +26,7 @@ class Auth {
   /// [key] is the object name in aliyun oss, alias the 'filepath/filename'
   void sign(HttpRequest req, String bucket, String key) {
     req.headers['x-oss-date'] = HttpDate.format(DateTime.now());
-    req.headers['x-oss-security-token'] = secureToken;
+    if (usingSts) req.headers['x-oss-security-token'] = secureToken;
     final String signature = _makeSignature(req, bucket, key);
     req.headers['Authorization'] = "OSS $accessKey:$signature";
   }
@@ -33,12 +36,13 @@ class Auth {
   /// [bucket] is the name of bucket used in aliyun oss
   /// [key] is the object name in aliyun oss, alias the 'filepath/filename'
   String getSignature(int expires, String bucket, String key) {
+    final resourceString = _getResourceString(bucket, key);
     final String stringToSign = [
       "GET",
       "",
       "",
       expires,
-      "${_getResourceString(bucket, key)}?security-token=$secureToken"
+      usingSts ? "$resourceString?security-token=$secureToken" : resourceString
     ].join("\n");
     final String signed = EncryptUtil.hmacSign(accessSecret, stringToSign);
 
