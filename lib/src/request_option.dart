@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_oss_aliyun/flutter_oss_aliyun.dart';
 
 class PutRequestOption {
+  final String? contentType;
   final String? bucketName;
   final ProgressCallback? onSendProgress;
   final ProgressCallback? onReceiveProgress;
@@ -10,6 +11,7 @@ class PutRequestOption {
   final StorageType? storageType;
 
   const PutRequestOption({
+    this.contentType,
     this.bucketName,
     this.onSendProgress,
     this.onReceiveProgress,

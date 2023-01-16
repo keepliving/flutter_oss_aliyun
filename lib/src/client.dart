@@ -265,7 +265,7 @@ class Client {
     );
 
     final Map<String, dynamic> headers = {
-      'content-type': "application/octet-stream",
+      'content-type': option?.contentType ?? "application/octet-stream",
       'content-length': multipartFile.length,
       'x-oss-forbid-overwrite': option.forbidOverride,
       'x-oss-object-acl': option.acl,
@@ -305,7 +305,7 @@ class Client {
     );
 
     final Map<String, dynamic> headers = {
-      'content-type': "application/octet-stream",
+      'content-type': option?.contentType ?? "application/octet-stream",
       'content-length': multipartFile.length,
       'x-oss-forbid-overwrite': option.forbidOverride,
       'x-oss-object-acl': option.acl,
