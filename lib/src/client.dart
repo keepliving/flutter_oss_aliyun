@@ -21,7 +21,7 @@ class Client {
   final String endpoint;
   final String bucketName;
   final Future<String> Function() tokenGetter;
-  static late final bool _usingSts;
+  static late bool _usingSts;
   static late Dio _dio;
   static late String _accessKey;
   static late String _accessKeySecret;
